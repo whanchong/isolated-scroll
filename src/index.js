@@ -40,9 +40,13 @@ export default el => {
 
   addEvent('mousewheel', handler);
   addEvent('DOMMouseScroll', handler);
+  addEvent('touchstart', handler);
+  addEvent('pointerdown', handler);
 
   return () => {
     removeEvent('mousewheel', handler);
     removeEvent('DOMMouseScroll', handler);
+    removeEvent('touchstart', handler);
+    removeEvent('pointerdown', handler);
   };
 };
