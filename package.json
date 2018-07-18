@@ -9,7 +9,6 @@
     "build": "rm -rf lib/ && babel -d lib/ src/",
     "prepublish": "npm run build",
     "clean": "rm -rf demo/dist",
-    "build": "npm run clean && webpack --config demo/webpack.config.js",
     "deploy": "npm run build && gh-pages -d demo/dist"
   },
   "repository": {
