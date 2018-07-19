@@ -1,3 +1,5 @@
+let lastY;
+
 const calculateHeight = el => {
   // Source adapted from: http://youmightnotneedjquery.com/#outer_height_with_margin
   let height = el.offsetHeight;
@@ -7,28 +9,61 @@ const calculateHeight = el => {
   return height;
 };
 
+const prevent = (event) => {
+  if (!event.cancelable) return;
+  event.stopPropagation();
+  event.preventDefault();
+  event.returnValue = false;
+  return false;
+};
+
+const getEventCoordinates = (event) => {
+  const moveEvent = (event.touches && event.touches[0]) || event;
+  return {
+    clientX: moveEvent.clientX,
+    clientY: moveEvent.clientY
+  };
+};
+
+const getDelta = (event) => {
+  const { type, detail, wheelDelta } = event;
+
+  if (type === 'DOMMouseScroll') {
+    return detail * -40;
+  } else if (type === 'mousewheel') {
+    return wheelDelta;
+  } else {
+    const clientY = getEventCoordinates(event).clientY;
+    return clientY - lastY;
+  }
+};
+
 // Source adapted from: http://stackoverflow.com/a/16324762
 const makeHandler = el => event => {
+  const { type } = event;
+
+  if (type === 'touchstart' || type === 'pointerdown') {
+    lastY = getEventCoordinates(event).clientY;
+    return;
+  }
+
   const { scrollTop, scrollHeight } = el;
-  const { type, detail, wheelDelta } = event;
   const height = calculateHeight(el);
-  const delta = (type === 'DOMMouseScroll' ? detail * -40 : wheelDelta);
+  const delta = getDelta(event);
   const up = delta > 0;
 
-  const prevent = () => {
-    event.stopPropagation();
-    event.preventDefault();
-    event.returnValue = false;
+  if (type === 'touchmove' || type === 'pointermove') {
+    lastY = getEventCoordinates(event).clientY;
+  }
 
-    return false;
-  };
-
-  if (!up && -delta > scrollHeight - height - scrollTop) {
-    el.scrollTop = scrollHeight;
-    return prevent();
-  } else if (up && delta > scrollTop) {
-    el.scrollTop = 0;
-    return prevent();
+  if (delta) {
+    if (!up && -delta > scrollHeight - height - scrollTop) {
+      el.scrollTop = scrollHeight;
+      return prevent(event);
+    } else if (up && delta > scrollTop) {
+      el.scrollTop = 0;
+      return prevent(event);
+    }
   }
 };
 
@@ -41,12 +76,16 @@ export default el => {
   addEvent('mousewheel', handler);
   addEvent('DOMMouseScroll', handler);
   addEvent('touchstart', handler);
+  addEvent('touchmove', handler);
   addEvent('pointerdown', handler);
+  addEvent('pointermove', handler);
 
   return () => {
     removeEvent('mousewheel', handler);
     removeEvent('DOMMouseScroll', handler);
     removeEvent('touchstart', handler);
+    removeEvent('touchmove', handler);
     removeEvent('pointerdown', handler);
+    removeEvent('pointermove', handler);
   };
 };
